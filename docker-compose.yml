@@ -1,0 +1,60 @@
+#######################################
+# Jenkins & Sonar docker stack
+# Kathirvel Gopal
+########################################
+version: "3.7"
+networks:
+   devops:
+      name: devops
+      driver: overlay
+volumes:
+   jenkins-data: {}
+   jenkins-docker-certs: {}
+   sonarqube_data: {}
+   sonarqube_extensions: {}
+   sonarqube_logs: {}
+   sonarqube_temp: {}
+   postgresql: {}
+   postgresql_data: {}
+services:
+   jenkins_service:
+      image: 'jenkinsci/blueocean'
+      networks: 
+        - devops
+      ports:
+        - target: 8080
+          published: 8080
+          protocol: tcp
+        - target: 50000
+          published: 50000
+          protocol: tcp
+      volumes:
+        - jenkins-data:/var/jenkins_home
+        - jenkins-docker-certs:/certs/client
+sonarqube_server:
+      image: 'sonarqube:latest'
+      depends_on:
+        - db
+      networks:
+        - devops
+      ports:
+        - target: 9000
+          published: 2020
+          protocol: tcp
+      environment:
+        SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: 'true'
+      volumes:
+        - sonarqube_data:/opt/sonarqube/data
+        - sonarqube_extensions:/opt/sonarqube/extensions
+        - sonarqube_logs:/opt/sonarqube/logs
+        - sonarqube_temp:/opt/sonarqube/temp
+db:
+      image: 'postgres:latest'
+      networks:
+        - devops
+      environment:
+        POSTGRES_USER: sonar
+        POSTGRES_PASSWORD: sonar
+      volumes:
+        - postgresql:/var/lib/postgresql
+        - postgresql_data:/var/lib/postgresql/data
